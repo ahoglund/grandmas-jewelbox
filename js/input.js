@@ -28,6 +28,7 @@ export class InputHandler {
   }
 
   _onKeyDown(e) {
+    if (e.target instanceof HTMLInputElement) return; // let text fields behave normally
     if (!BOUND_CODES.has(e.code)) return;
     e.preventDefault();
     if (e.repeat) return; // we drive repeat ourselves via DAS in update()

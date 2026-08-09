@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Grandma's Jewelbox</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <h1 id="title-heading">Grandma's Jewelbox</h1>
+
+    <div id="game-area">
+      <canvas id="game-canvas"></canvas>
+
+      <div id="side-panel">
+        <div class="panel-block">
+          <h2>Next</h2>
+          <canvas id="next-canvas"></canvas>
+        </div>
+        <div class="panel-block" id="hud">
+          <div class="hud-row"><span class="hud-label">Score</span><span id="score">0</span></div>
+          <div class="hud-row"><span class="hud-label">Lives</span><span id="lives">3</span></div>
+          <div class="hud-row"><span class="hud-label">Level</span><span id="level">1</span></div>
+        </div>
+        <div class="panel-block" id="chain-indicator" style="display:none;">
+          <div class="hud-row"><span class="hud-label">Chain</span><span id="chain">x1</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="overlay-title" class="overlay">
+      <div class="overlay-box">
+        <h2>Grandma's Jewelbox</h2>
+        <p>Match 3 or more gems &mdash; horizontally, vertically, or diagonally.</p>
+        <p class="controls">
+          &larr;/&rarr; move &nbsp;&middot;&nbsp; &uarr;/Space cycle gems &nbsp;&middot;&nbsp; &darr; soft drop &nbsp;&middot;&nbsp; P pause
+        </p>
+        <p class="prompt">Press Enter to start</p>
+      </div>
+    </div>
+
+    <div id="overlay-pause" class="overlay hidden">
+      <div class="overlay-box">
+        <h2>Paused</h2>
+        <p class="prompt">Press P or Escape to resume</p>
+      </div>
+    </div>
+
+    <div id="overlay-gameover" class="overlay hidden">
+      <div class="overlay-box">
+        <h2>Game Over</h2>
+        <p>Final score: <span id="final-score">0</span></p>
+        <p class="prompt">Press Enter to play again</p>
+      </div>
+    </div>
+
+    <div id="overlay-boardclear" class="overlay hidden">
+      <div class="overlay-box">
+        <h2>Well Overflowed!</h2>
+        <p><span id="lives-remaining">2</span> lives remaining</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

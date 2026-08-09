@@ -1,0 +1,136 @@
+:root {
+  --bg: #14101c;
+  --panel-bg: #1f1830;
+  --panel-border: #3a2d54;
+  --text: #ece6f7;
+  --text-dim: #a89bc4;
+  --accent: #e0b3ff;
+  --board-bg: #0b0812;
+  --board-line: #2a2140;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 12px;
+  position: relative;
+  min-height: 100%;
+}
+
+h1#title-heading {
+  margin: 0;
+  font-size: 1.6rem;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  text-shadow: 0 0 12px rgba(224, 179, 255, 0.35);
+}
+
+#game-area {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+#game-canvas {
+  background: var(--board-bg);
+  border: 2px solid var(--panel-border);
+  border-radius: 6px;
+  display: block;
+}
+
+#side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 150px;
+}
+
+.panel-block {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.panel-block h2 {
+  margin: 0 0 8px 0;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+#next-canvas {
+  display: block;
+  background: var(--board-bg);
+  border-radius: 4px;
+  margin: 0 auto;
+}
+
+.hud-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  padding: 2px 0;
+}
+
+.hud-label {
+  color: var(--text-dim);
+}
+
+#chain-indicator #chain {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 7, 16, 0.82);
+  z-index: 10;
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.overlay-box {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 28px 36px;
+  text-align: center;
+  max-width: 420px;
+}
+
+.overlay-box h2 {
+  margin-top: 0;
+  color: var(--accent);
+}
+
+.overlay-box .controls {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.overlay-box .prompt {
+  margin-top: 18px;
+  font-weight: bold;
+}

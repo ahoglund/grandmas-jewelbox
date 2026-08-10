@@ -9,7 +9,7 @@ import {
   BOARD_CLEAR_PAUSE_MS,
 } from "./constants.js";
 import { Board } from "./board.js";
-import { PieceGenerator } from "./piece.js";
+import { Piece, PieceGenerator } from "./piece.js";
 import { findMatches, clearMatches } from "./match.js";
 import { calculateStepScore, checkMilestones } from "./scoring.js";
 import { ScreenState, Phase } from "./state.js";
@@ -20,6 +20,11 @@ export class Game {
     this.screenState = ScreenState.TITLE;
     this.phase = Phase.SPAWNING;
     this._resetRoundState();
+
+    // Set by main.js; called with the final score right when a round ends
+    // (screenState -> GAME_OVER). Keeps localStorage/DOM concerns out of
+    // this class.
+    this.onGameOver = null;
   }
 
   _resetRoundState() {
@@ -210,6 +215,7 @@ export class Game {
     this.board.clear();
     if (this.lives <= 0) {
       this.screenState = ScreenState.GAME_OVER;
+      if (this.onGameOver) this.onGameOver(this.score);
     } else {
       this.phase = Phase.SPAWNING;
     }
@@ -225,6 +231,58 @@ export class Game {
     const { livesGained, nextMilestone } = checkMilestones(this.score, this.nextLifeMilestone);
     if (livesGained > 0) this.lives += livesGained;
     this.nextLifeMilestone = nextMilestone;
+  }
+
+  // --- snapshot (resume-on-refresh persistence, see storage.js/main.js) --
+
+  // Plain-data dump of everything needed to resume exactly where the
+  // player left off. Only meaningful while PLAYING/PAUSED — main.js is
+  // responsible for not persisting a TITLE/GAME_OVER snapshot.
+  toSnapshot() {
+    return {
+      board: this.board.grid.map((row) => [...row]),
+      piece: { col: this.piece.col, row: this.piece.row, gems: [...this.piece.gems] },
+      nextGems: [...this.pieceGenerator.next.gems],
+      score: this.score,
+      lives: this.lives,
+      level: this.level,
+      gemsCleared: this.gemsCleared,
+      nextLifeMilestone: this.nextLifeMilestone,
+      fallIntervalMs: this.fallIntervalMs,
+      fallTimerMs: this.fallTimerMs,
+      softDropActive: this.softDropActive,
+      chainCount: this.chainCount,
+      flashingCells: this.flashingCells ? Array.from(this.flashingCells) : null,
+      clearFlashTimer: this.clearFlashTimer,
+      boardClearTimer: this.boardClearTimer,
+      phase: this.phase,
+      screenState: this.screenState,
+    };
+  }
+
+  // Inverse of toSnapshot(): rebuilds this Game's state from a plain-data
+  // snapshot produced by toSnapshot() (typically loaded from localStorage).
+  restoreFromSnapshot(snapshot) {
+    this.board.grid = snapshot.board.map((row) => [...row]);
+
+    this.piece = new Piece(snapshot.piece.col, snapshot.piece.row, [...snapshot.piece.gems]);
+    this.pieceGenerator.current = this.piece;
+    this.pieceGenerator.next = new Piece(SPAWN_COL, 0, [...snapshot.nextGems]);
+
+    this.score = snapshot.score;
+    this.lives = snapshot.lives;
+    this.level = snapshot.level;
+    this.gemsCleared = snapshot.gemsCleared;
+    this.nextLifeMilestone = snapshot.nextLifeMilestone;
+    this.fallIntervalMs = snapshot.fallIntervalMs;
+    this.fallTimerMs = snapshot.fallTimerMs;
+    this.softDropActive = snapshot.softDropActive;
+    this.chainCount = snapshot.chainCount;
+    this.flashingCells = snapshot.flashingCells ? new Set(snapshot.flashingCells) : null;
+    this.clearFlashTimer = snapshot.clearFlashTimer;
+    this.boardClearTimer = snapshot.boardClearTimer;
+    this.phase = snapshot.phase;
+    this.screenState = snapshot.screenState;
   }
 
   // --- debug hooks (only wired to `window` behind ?debug=1, see main.js) --

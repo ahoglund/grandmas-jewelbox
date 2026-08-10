@@ -31,10 +31,25 @@
     <div id="overlay-title" class="overlay">
       <div class="overlay-box">
         <h2>Grandma's Jewelbox</h2>
-        <p>Match 3 or more gems &mdash; horizontally, vertically, or diagonally.</p>
-        <p class="controls">
-          &larr;/&rarr; move &nbsp;&middot;&nbsp; &uarr;/Space cycle gems &nbsp;&middot;&nbsp; &darr; soft drop &nbsp;&middot;&nbsp; P pause
-        </p>
+        <p class="objective">Match 3+ gems in a row &mdash; horizontal, vertical, or diagonal.</p>
+
+        <ul class="key-list">
+          <li><kbd>&larr;</kbd><kbd>&rarr;</kbd><span>Move</span></li>
+          <li><kbd>&uarr;</kbd><kbd>Space</kbd><span>Cycle gems</span></li>
+          <li><kbd>&darr;</kbd><span>Soft drop</span></li>
+          <li><kbd>P</kbd><span>Pause</span></li>
+        </ul>
+
+        <label class="name-field">
+          Player
+          <input id="player-name" type="text" maxlength="20" placeholder="Anonymous" autocomplete="off" />
+        </label>
+
+        <div class="leaderboard-block">
+          <h3>High Scores</h3>
+          <ol class="leaderboard" id="high-scores-title"></ol>
+        </div>
+
         <p class="prompt">Press Enter to start</p>
       </div>
     </div>
@@ -50,6 +65,12 @@
       <div class="overlay-box">
         <h2>Game Over</h2>
         <p>Final score: <span id="final-score">0</span></p>
+
+        <div class="leaderboard-block">
+          <h3>High Scores</h3>
+          <ol class="leaderboard" id="high-scores-gameover"></ol>
+        </div>
+
         <p class="prompt">Press Enter to play again</p>
       </div>
     </div>

@@ -1,5 +1,6 @@
-import { COLS, ROWS, CELL_SIZE, GEM_RENDER_COLORS, CLEAR_FLASH_MS } from "./constants.js";
+import { COLS, ROWS, CELL_SIZE, GEM_RENDER_COLORS, GEM_SHAPES, CLEAR_FLASH_MS } from "./constants.js";
 import { Phase, ScreenState } from "./state.js";
+import * as storage from "./storage.js";
 
 const BOARD_LINE_COLOR = "rgba(255, 255, 255, 0.05)";
 
@@ -15,6 +16,69 @@ function lerpColor(hexA, hexB, t) {
   const g = Math.round(a[1] + (b[1] - a[1]) * t);
   const bl = Math.round(a[2] + (b[2] - a[2]) * t);
   return `rgb(${r}, ${g}, ${bl})`;
+}
+
+// Builds a regular-polygon path (triangle/hexagon/octagon/etc.) centered at
+// (cx, cy), starting at `rotation` radians.
+function polygonPath(ctx, cx, cy, radius, sides, rotation) {
+  ctx.beginPath();
+  for (let i = 0; i < sides; i++) {
+    const angle = rotation + (i * 2 * Math.PI) / sides;
+    const x = cx + radius * Math.cos(angle);
+    const y = cy + radius * Math.sin(angle);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+}
+
+// Point at top, rounds into a wide bottom — two mirrored bezier curves.
+function teardropPath(ctx, cx, cy, r) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - r);
+  ctx.bezierCurveTo(cx + r * 1.3, cy - r * 0.2, cx + r * 0.9, cy + r, cx, cy + r);
+  ctx.bezierCurveTo(cx - r * 0.9, cy + r, cx - r * 1.3, cy - r * 0.2, cx, cy - r);
+  ctx.closePath();
+}
+
+// Builds the current path for a given shape name. Every gem's shape is
+// looked up via GEM_SHAPES so each color reads as visually distinct, not
+// just differently colored.
+function shapePath(ctx, shape, cx, cy, radius) {
+  switch (shape) {
+    case "oval":
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, radius * 0.75, radius, 0, 0, Math.PI * 2);
+      break;
+    case "teardrop":
+      teardropPath(ctx, cx, cy, radius);
+      break;
+    case "hexagon":
+      polygonPath(ctx, cx, cy, radius, 6, -Math.PI / 2);
+      break;
+    case "triangle":
+      polygonPath(ctx, cx, cy, radius, 3, -Math.PI / 2);
+      break;
+    case "octagon":
+      polygonPath(ctx, cx, cy, radius, 8, -Math.PI / 8);
+      break;
+    case "rectangle": {
+      const w = radius * 1.6;
+      const h = radius * 1.1;
+      ctx.beginPath();
+      ctx.rect(cx - w / 2, cy - h / 2, w, h);
+      break;
+    }
+    case "square": {
+      const s = radius * 1.3;
+      ctx.beginPath();
+      ctx.rect(cx - s / 2, cy - s / 2, s, s);
+      break;
+    }
+    default: // "circle" fallback
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  }
 }
 
 export class Renderer {
@@ -43,7 +107,45 @@ export class Renderer {
       overlayBoardClear: document.getElementById("overlay-boardclear"),
       finalScore: document.getElementById("final-score"),
       livesRemaining: document.getElementById("lives-remaining"),
+      playerName: document.getElementById("player-name"),
+      leaderboardTitle: document.getElementById("high-scores-title"),
+      leaderboardGameOver: document.getElementById("high-scores-gameover"),
     };
+
+    this.dom.playerName.value = storage.getPlayerName();
+    this.dom.playerName.addEventListener("input", () => {
+      storage.setPlayerName(this.dom.playerName.value);
+    });
+
+    this.refreshLeaderboards();
+  }
+
+  // Repopulates both leaderboard lists from localStorage. Called once at
+  // startup and again whenever a new score is recorded (see main.js's
+  // game.onGameOver wiring).
+  refreshLeaderboards() {
+    const scores = storage.getHighScores();
+    for (const list of [this.dom.leaderboardTitle, this.dom.leaderboardGameOver]) {
+      list.innerHTML = "";
+      if (scores.length === 0) {
+        const li = document.createElement("li");
+        li.className = "empty";
+        li.textContent = "No scores yet";
+        list.appendChild(li);
+        continue;
+      }
+      for (const entry of scores) {
+        const li = document.createElement("li");
+        const name = document.createElement("span");
+        name.className = "entry-name";
+        name.textContent = entry.name;
+        const score = document.createElement("span");
+        score.className = "entry-score";
+        score.textContent = entry.score;
+        li.append(name, score);
+        list.appendChild(li);
+      }
+    }
   }
 
   render() {
@@ -118,24 +220,35 @@ export class Renderer {
       baseColor = lerpColor(palette.base, "#ffffff", pulse * 0.7);
     }
 
-    const gradient = ctx.createRadialGradient(
-      cx - radius * 0.3,
-      cy - radius * 0.3,
-      radius * 0.1,
-      cx,
-      cy,
-      radius
-    );
-    gradient.addColorStop(0, lightColor);
-    gradient.addColorStop(1, baseColor);
+    const isWildcard = color === "BLANK";
+    const shape = GEM_SHAPES[color] ?? "circle";
 
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.fillStyle = gradient;
+    shapePath(ctx, shape, cx, cy, radius);
+
+    if (isWildcard) {
+      // Flat, muted fill (no glossy gradient) so it reads as "not a real
+      // gem" at a glance.
+      ctx.fillStyle = baseColor;
+    } else {
+      const gradient = ctx.createRadialGradient(
+        cx - radius * 0.3,
+        cy - radius * 0.3,
+        radius * 0.1,
+        cx,
+        cy,
+        radius
+      );
+      gradient.addColorStop(0, lightColor);
+      gradient.addColorStop(1, baseColor);
+      ctx.fillStyle = gradient;
+    }
     ctx.fill();
+
     ctx.lineWidth = 2;
     ctx.strokeStyle = palette.dark;
+    if (isWildcard) ctx.setLineDash([4, 3]);
     ctx.stroke();
+    if (isWildcard) ctx.setLineDash([]);
 
     if (color === "ONYX") {
       ctx.beginPath();
